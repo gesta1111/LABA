@@ -1,0 +1,23 @@
+{
+  "name": "coldmonitor",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run build --filter=@cold/shared && turbo run dev --filter=@cold/web --filter=@cold/server --filter=@cold/emulator --filter=@cold/gateway",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "turbo": "^2.10.13",
+    "typescript": "~5.9.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "npm@11.19.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
