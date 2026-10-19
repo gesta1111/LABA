@@ -9,9 +9,10 @@ loadEnv({ path: resolve(here, "../../../.env") });
 loadEnv({ path: resolve(here, "../.env") });
 
 const port = Number(process.env.EMULATOR_PORT ?? 5051);
+const host = process.env.EMULATOR_HOST ?? "127.0.0.1";
 
 const ingest = createEmulator();
 await ingest.start();
-await startEmulatorServer(ingest, port);
+await startEmulatorServer(ingest, port, host);
 
-console.log(`[emulator] WS/HTTP 127.0.0.1:${port}  POST /ingest`);
+console.log(`[emulator] WS/HTTP ${host}:${port}  POST /ingest`);

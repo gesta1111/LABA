@@ -1,0 +1,109 @@
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: .
+      target: runtime
+    command: ["node", "apps/server/dist/server.js"]
+    environment:
+      HOST: 0.0.0.0
+      PORT: 5050
+      MONGODB_URI: mongodb://mongo:27017/coldmonitor
+      GATEWAY_TOKEN: ${GATEWAY_TOKEN:-dev-token}
+    ports:
+      - "5050:5050"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:5050/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  emulator:
+    build:
+      context: .
+      target: runtime
+    command: ["node", "packages/emulator/dist/cli.js"]
+    environment:
+      EMULATOR_HOST: 0.0.0.0
+      EMULATOR_PORT: 5051
+    ports:
+      - "5051:5051"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:5051/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  gateway:
+    build:
+      context: .
+      target: runtime
+    command: ["node", "packages/gateway/dist/index.js"]
+    environment:
+      EMULATOR_WS_URL: ws://emulator:5051
+      VITE_API_URL: http://server:5050
+      VITE_SOCKET_URL: http://server:5050
+      GATEWAY_TOKEN: ${GATEWAY_TOKEN:-dev-token}
+    depends_on:
+      server:
+        condition: service_healthy
+      emulator:
+        condition: service_healthy
+
+  generator:
+    build:
+      context: .
+      target: runtime
+    command: ["node", "packages/generator/dist/cli.js"]
+    environment:
+      EMULATOR_WS_URL: ws://emulator:5051
+      INTERVAL_MS: ${INTERVAL_MS:-2000}
+      DEVICE_IDS: ${DEVICE_IDS:-fridge-1}
+      MODE: ${MODE:-auto}
+    depends_on:
+      emulator:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      target: web
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5050}
+        VITE_SOCKET_URL: ${VITE_SOCKET_URL:-http://localhost:5050}
+    ports:
+      - "5173:80"
+    depends_on:
+      server:
+        condition: service_healthy
+
+volumes:
+  mongo_data:

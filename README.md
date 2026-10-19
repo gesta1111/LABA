@@ -11,7 +11,19 @@
 | Эмулятор датчика (WS + HTTP `/ingest`) | 5051 |
 | MongoDB | 27017 |
 
-## Запуск
+## Docker (OrbStack / Docker Desktop)
+
+Одной командой поднимаются MongoDB, backend, эмулятор, шлюз, генератор и PWA:
+
+```sh
+docker compose up --build
+```
+
+UI: http://localhost:5173 · API: http://localhost:5050
+
+Остановка: `docker compose down`. Данные Mongo сохраняются в volume `mongo_data`.
+
+## Запуск без Docker
 
 1. Поднимите MongoDB локально (`mongodb://127.0.0.1:27017/coldmonitor`) или укажите URI Atlas.
 2. Скопируйте переменные окружения:

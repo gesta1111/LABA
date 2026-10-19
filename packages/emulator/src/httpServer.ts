@@ -33,6 +33,7 @@ function broadcast(wss: WebSocketServer, payload: string): void {
 export function startEmulatorServer(
   ingest: SensorIngest,
   port: number,
+  host = "127.0.0.1",
 ): Promise<{ close: () => Promise<void> }> {
   return new Promise((resolve, reject) => {
     const server = createServer((req, res) => {
@@ -57,7 +58,8 @@ export function startEmulatorServer(
     });
 
     server.once("error", reject);
-    server.listen(port, "127.0.0.1", () => {
+    // В Docker нужен 0.0.0.0, локально по умолчанию loopback
+    server.listen(port, host, () => {
       resolve({
         async close() {
           unsubscribe();
